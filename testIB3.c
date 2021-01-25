@@ -8,7 +8,7 @@ int main()
     if (fork() != 0)
     { // processus pere
         wait(NULL);
-        printpid("pere\n");
+        printpidppid("pere\n");
     }
     else
     {
