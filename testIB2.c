@@ -5,11 +5,11 @@ int main()
 {
     if (fork() != 0)
     { // processus pere
-        printpid("pere\n");
+        printpidppid("pere\n");
     }
     else
     {
-        printpid("fils\n");
+        printpidppid("fils\n");
     }
     return 0;
 }
