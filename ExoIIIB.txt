@@ -1,0 +1,78 @@
+Sur une machine avec un mono−processeur mono−coeur le partage d'un
+fichier entre un processus parent et ses enfants est bien
+déterminé. Cela se complique lorsqu'un multiprocesseur ou un
+processeur multi−coeurs est utilisé (ce qui est le cas des machines à
+l'ESIEE). La sémantique de partage n'est alors pas réellement
+spécifié. J'explique ci−dessous ce qui se passe dans le cas
+mono−processeur et mono−coeur puis je décris ce qui arrive dans le cas
+multi−coeurs avec une tentative d'explication. Vous pouvez avoir cette
+discussion avec les étudiants qui arriveront jusque là dans le TP. Par
+contre, il n'est pas nécessaire d'expliquer cela au tableau à la
+classe entière.
+
+−−−−−−−−−−−−−−−−−− Cas mono−processeur, mono−coeur.
+
+Lors de la duplication d'un processus avec fork, l'espace d'adressage
+du processus fils est une recopie de celui du processus père (à part
+la valeur de retour de fork). Cela signifie que la table des
+descripteurs de fichiers du processus fils est une recopie de celle du
+processus père. Cette table contient des pointeurs vers des structures
+de fichier ouvert maintenue par le Système d'exploitation et qui
+contiennent tout ce qui est nécessaire pour lire un fichier (droit
+d'accès, propriétaire du fichier, position de lecture, etc.). Si un
+fichier est ouvert avant duplication du processus alors les processus
+parent et enfant pointent sur la même structure de fichier ouvert. Il
+partage donc la position de lecture dans le fichier. Si le deux
+processus lisent simultanément ce fichier, alors chaque octet du
+fichier sera lu soit par le processus père, soit par le processus fils
+mais jamais par les deux. Dans l'exemple du TP, chacun des deux
+processus lit des caractères jusqu'à trouver un '\n'. Le premier
+processus à trouver '\n' (celui indiquant la fin de la première ligne
+du fichier) ne lira que des caractères de la première ligne, mais pas
+nécessairement tous les caractères de la première ligne. Le second
+processus à trouver '\n' (celui indiquant la fin de la deuxième ligne)
+lira quelques caractères de la première ligne puis tous les caractères
+de la deuxième ligne.
+
+Dans le cas ou le fichier est ouvert après la duplication du processus
+avec fork, le système d'exploitation créé deux structures de fichier
+ouvert, la première crée lors de l'appel à open dans le père et la
+seconde lors de l'appel à open dans le fils. Le père et le fils
+pointent donc sur deux structures distinctes de fichier ouvert. Chacun
+d'eux lira donc intégralement la première ligne du fichier.
+
+−−−−−−−−−−−−−−−−−− Cas multiprocesseurs et/ou multi−coeurs
+
+Lorsque l'on exécute le programme dans lequel le fichier est ouvert
+après le fork, on constate la même chose que dans le cas
+mono−processeur.
+
+Lorsque l'on exécute le programme où le fichier est
+ouvert avant le fork on constate que :
+
+− certains caractères sont lus par le père et le fils ;
+− certains caractères sont lus, soit par le père soit par le fils mais
+pas par les deux processus;
+− parfois seule la première ligne est lue (le père et le fils ont lu
+le '\n' de la première ligne du fichier), parfois les deux lignes sont
+lues.
+
+Que s'est−il donc passé ? Une recherche sur internet ne donne pas de réponse claire à cette question. J'ai l'impression qu'il n'y a pas de
+norme et que cela peut varier d'une architecture matérielle à l'autre.
+
+** tentative d'explication **
+
+Apparemment chaque coeur dispose d'une mémoire cache dans lequel il
+peut charger une copie de la partie de la mémoire dont il a
+besoin. Donc, chaque coeur peut disposer d'une copie de la structure
+de fichier ouvert maintenue par le système, cette structure étant "de
+temps en temps" mise en commun entre les différents coeurs. Ainsi, si
+les processus parents et enfants sont exécutés sur deux coeurs
+distincts, de temps en temps le pointeur de fichier n'est pas partagé
+(entre 2 mises à jour de la structure de fichier ouvert) et de temps
+en temps il est partagé (à chaque mise à jour de la structure). Cela
+expliquerait le comportement mixte constaté à l'exécution du programme
+à l'ESIEE.
+
+N'hésitez à m'indiquez d'autres éléments expliquant ce comportement si
+vous en trouvez de votre coté :−).
